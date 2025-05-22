@@ -50,8 +50,7 @@ namespace social_force_window_planner {
    * @brief A ROS wrapper for the trajectory controller that queries the param
    * server to construct a controller
    */
-  class SFWPlannerNode : public nav2_core::Controller 
-  {
+  class SFWPlannerNode : public nav2_core::Controller {
     public:
       /**
        * @brief Construct a new SFWPlannerROS object
@@ -152,7 +151,6 @@ namespace social_force_window_planner {
       bool transformPoint(const std::string frame,
                           const geometry_msgs::msg::PointStamped &in_point,
                           geometry_msgs::msg::PointStamped &out_point) const;
-
 
       bool isGoalReached();
 

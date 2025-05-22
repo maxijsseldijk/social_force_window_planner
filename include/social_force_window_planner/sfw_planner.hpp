@@ -54,8 +54,8 @@ namespace social_force_window_planner {
 
 struct ControllerParams {
   ControllerParams()
-      : controller_frame_("odom"), robot_base_frame_("base_link"), drivetype_("differential"),
-        max_vel_x_(0.7), min_vel_x_(0.1), max_vel_y_(0.7),min_vel_y_(0.1), max_vel_th_(0.5), min_vel_th_(0.1),
+      : controller_frame_("odom"), robot_base_frame_("base_link"),
+        max_vel_x_(0.7), min_vel_x_(0.1), max_vel_th_(0.5), min_vel_th_(0.1),
         max_trans_acc_(1.0), max_rot_acc_(1.0), min_in_place_vel_th_(0.3),
         yaw_goal_tolerance_(0.05), xy_goal_tolerance_(0.1), wp_tolerance_(0.5),
         sim_time_(1.0), sim_granularity_(0.025),
@@ -80,26 +80,12 @@ struct ControllerParams {
     node->get_parameter(name + ".robot_base_frame", robot_base_frame_);
 
     // Robot Configuration Parameters
-    nav2_util::declare_parameter_if_not_declared(node, name + ".drivetype",
-                                                 rclcpp::ParameterValue("differential"));
-    node->get_parameter(name + ".drivetype", drivetype_);
-
-    nav2_util::declare_parameter_if_not_declared(node, name + ".max_trans_vel_x",
+    nav2_util::declare_parameter_if_not_declared(node, name + ".max_trans_vel",
                                                  rclcpp::ParameterValue(0.7));
-    node->get_parameter(name + ".max_trans_vel_x", max_vel_x_);
-    nav2_util::declare_parameter_if_not_declared(node, name + ".min_trans_vel_x",
+    node->get_parameter(name + ".max_trans_vel", max_vel_x_);
+    nav2_util::declare_parameter_if_not_declared(node, name + ".min_trans_vel",
                                                  rclcpp::ParameterValue(0.1));
-    node->get_parameter(name + ".min_trans_vel_x", min_vel_x_);
-
-    nav2_util::declare_parameter_if_not_declared(node, name + ".max_trans_vel_y",
-                                                 rclcpp::ParameterValue(0.7));
-    node->get_parameter(name + ".max_trans_vel_y", max_vel_y_);
-    nav2_util::declare_parameter_if_not_declared(node, name + ".min_trans_vel_y",
-                                                 rclcpp::ParameterValue(0.1));
-    node->get_parameter(name + ".min_trans_vel_y", min_vel_y_);
-
-
-
+    node->get_parameter(name + ".min_trans_vel", min_vel_x_);
     nav2_util::declare_parameter_if_not_declared(node, name + ".max_rot_vel",
                                                  rclcpp::ParameterValue(0.5));
     node->get_parameter(name + ".max_rot_vel", max_vel_th_);
@@ -199,14 +185,11 @@ struct ControllerParams {
 
   std::string controller_frame_;
   std::string robot_base_frame_;
-  std::string drivetype_;                 
-
   // Controller freq
   // double controller_freq_;
 
   // Robot Configuration Parameters
   double max_vel_x_, min_vel_x_;
-  double max_vel_y_, min_vel_y_;
   double max_vel_th_, min_vel_th_;
   double max_trans_acc_;
   double max_rot_acc_;
@@ -389,8 +372,7 @@ private:
   std::vector<geometry_msgs::msg::PoseStamped>
       local_plan_; ///< @brief The local path for the
                    /// robot to follow
-  std::vector<double> linvels_x_;
-  std::vector<double> linvels_y_;
+  std::vector<double> linvels_;
   std::vector<double> angvels_;
   visualization_msgs::msg::MarkerArray markers_;
 

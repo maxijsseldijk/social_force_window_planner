@@ -32,7 +32,6 @@
 #include <visualization_msgs/msg/marker.hpp>
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
-
 // sensor input for obstacles
 #include <sensor_msgs/msg/laser_scan.hpp>
 // Detection input for social navigation
@@ -56,11 +55,11 @@ namespace social_force_window_planner {
 
 struct InterfaceParams {
   InterfaceParams()
-      : max_robot_vel_x_(0.7),max_robot_vel_y_(0.7), robot_radius_(0.35), people_radius_(0.35),
+      : max_robot_vel_x_(0.7), robot_radius_(0.35), people_radius_(0.35),
         robot_frame_("base_link"), controller_frame_("odom"),
         max_obstacle_dist_(3.0), naive_goal_time_(2.0), people_velocity_(1.0),
-        laser_topic_("scan"), people_topic_("people"), odom_topic_("odom"), forceFactorDesired(2.0), forceFactorObstacle(10.0),
-        forceSigmaObstacle(0.2), forceFactorSocial(2.1),
+        laser_topic_("scan"), people_topic_("people"), odom_topic_("odom"),forceFactorDesired(2.0), 
+        forceFactorObstacle(10.0), forceSigmaObstacle(0.2), forceFactorSocial(2.1),
         forceFactorGroupGaze(3.0), forceFactorGroupCoherence(2.0),
         forceFactorGroupRepulsion(1.0), lambda(2.0), gamma(0.35), n(2.0),
         nPrime(3.0), relaxationTime(0.5) {}
@@ -76,14 +75,9 @@ struct InterfaceParams {
                      "SENSOR INTERFACE reading params of CONTROLLER: %s ",
                      name.c_str());
 
-    nav2_util::declare_parameter_if_not_declared(node, name + ".max_trans_vel_x",
+    nav2_util::declare_parameter_if_not_declared(node, name + ".max_trans_vel",
                                                  rclcpp::ParameterValue(0.7));
-    node->get_parameter(name + ".max_trans_vel_x", max_robot_vel_x_);
-    
-    nav2_util::declare_parameter_if_not_declared(node, name + ".max_trans_vel_y",
-                                                 rclcpp::ParameterValue(0.7));
-    node->get_parameter(name + ".max_trans_vel_y", max_robot_vel_y_);
-    
+    node->get_parameter(name + ".max_trans_vel", max_robot_vel_x_);
 
     nav2_util::declare_parameter_if_not_declared(node, name + ".robot_radius",
                                                  rclcpp::ParameterValue(0.35));
@@ -209,7 +203,6 @@ struct InterfaceParams {
     //           << std::endl;
   }
   float max_robot_vel_x_;
-  float max_robot_vel_y_;
   float robot_radius_;
   float people_radius_;
   std::string robot_frame_;
@@ -221,7 +214,7 @@ struct InterfaceParams {
   std::string people_topic_;
   std::string odom_topic_;
 
-    // Social Force Model parameters
+  // Social Force Model parameters
   double forceFactorDesired;
   double forceFactorObstacle;
   double forceSigmaObstacle;
@@ -238,7 +231,7 @@ struct InterfaceParams {
   
 };
 
-    class SFMSensorInterface {
+class SFMSensorInterface {
 public:
   /**
      * @brief  Default constructor
@@ -272,7 +265,7 @@ public:
          */
   void odomCb(const nav_msgs::msg::Odometry::SharedPtr odom);
 
-
+  
   void loadParameters(size_t agent_index);
 
   /**
@@ -282,17 +275,18 @@ public:
          * @param to string with the name of the target frame
          * @return coordinate vector in the target frame
          */
-        geometry_msgs::msg::Vector3
-        transformVector(geometry_msgs::msg::Vector3 &vector,
-                        builtin_interfaces::msg::Time t, std::string from,
-    std::string to);
+  geometry_msgs::msg::Vector3
+  transformVector(geometry_msgs::msg::Vector3 &vector,
+                  builtin_interfaces::msg::Time t, std::string from,
+                  std::string to);
 
   /**
          * @brief  returns the vector of sfm agents
          * @return agents vector
          */
   std::vector<sfm::Agent> getAgents();
-        void getOdom(nav_msgs::msg::Odometry &base_odom);
+
+  void getOdom(nav_msgs::msg::Odometry &base_odom);
   // void getRobotVel(geometry_msgs::msg::PoseStamped &robot_vel);
 
   void start() { running_ = true; };

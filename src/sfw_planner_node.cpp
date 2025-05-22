@@ -60,6 +60,7 @@ void SFWPlannerNode::configure(
 
   costmap_ros_ = costmap_ros;
   costmap_ = costmap_ros_->getCostmap();
+
   // sensor interface
   sensor_iface_ = std::make_shared<SFMSensorInterface>(parent_, tf, name);
 
@@ -71,10 +72,11 @@ void SFWPlannerNode::configure(
 
   traj_pub_ = node_->create_publisher<visualization_msgs::msg::MarkerArray>(
       "robot_local_trajectories", 1);
-
+  RCLCPP_INFO(logger_, "Creating SFWPlanner");
   sfw_planner_ =
       std::make_shared<SFWPlanner>(parent, name, sensor_iface_, *costmap_,
                                    costmap_ros_->getRobotFootprint());
+  RCLCPP_INFO(logger_, "SFWPlanner created");
 }
 
 void SFWPlannerNode::cleanup() {
@@ -281,7 +283,6 @@ geometry_msgs::msg::TwistStamped SFWPlannerNode::computeVelocityCommands(
       sfw_planner_->findBestAction(robot_pose, speed, drive_cmds); // robot_vel
 
   visualization_msgs::msg::MarkerArray markers = sfw_planner_->getMarkers();
-
   nav_msgs::msg::Path trajectory_end_point = sfw_planner_->getTrajectoryEndPoint();
 
   // For timing uncomment

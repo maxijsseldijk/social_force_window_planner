@@ -20,17 +20,15 @@ SFMSensorInterface::SFMSensorInterface(
     const std::shared_ptr<tf2_ros::Buffer> &tf, const std::string name)
     : tf_buffer_(tf), name_(name),parent_(parent) {
 
+
   laser_received_ = false;
   running_ = false;
-
   auto node = parent_.lock();
-  logger_ = node->get_logger();
   node_ = node;
-
-  last_laser_ = node_->get_clock()->now();
-
-  RCLCPP_ERROR(logger_,
+  
+  RCLCPP_ERROR(node_->get_logger(),
               "CONFIGURING SENSOR INTERFACE of CONTROLLER: %s ", name_.c_str());
+  last_laser_ = node_->get_clock()->now();
 
   iface_params_.get(node_.get(), name_);
 
@@ -42,12 +40,6 @@ SFMSensorInterface::SFMSensorInterface(
   agents_[0].teleoperated = true;
   agents_[0].groupId = -1;
   loadParameters(0);
-
-
-
-  //agents_[0].id = 0;
-
-  RCLCPP_FATAL(logger_, "Agents_ size: %ld and id: %d", agents_.size(), agents_[0].id);
 
   std::chrono::duration<int> buffer_timeout(1);
 
@@ -125,7 +117,7 @@ void SFMSensorInterface::laserCb(
   builtin_interfaces::msg::Time t = base_odom_.header.stamp;
   odom_mutex_.unlock();
 
-  RCLCPP_INFO_ONCE(logger_, "laser received");
+  RCLCPP_INFO_ONCE(node_->get_logger(), "laser received");
 
   std::vector<utils::Vector2d> points;
   float angle = laser->angle_min;
@@ -144,7 +136,7 @@ void SFMSensorInterface::laserCb(
   }
 
   if (points.empty()) {
-    RCLCPP_WARN(logger_, "laser points are empty!");
+    RCLCPP_WARN(node_->get_logger(), "laser points are empty!");
     obs_mutex_.lock();
     obstacles_ = points;
     obs_mutex_.unlock();
@@ -166,12 +158,12 @@ void SFMSensorInterface::laserCb(
       try {
         tf2::Duration tf_tolerance = tf2::durationFromSec(0.1);
         geometry_msgs::msg::PointStamped out =
-            tf_buffer_->transform(in, iface_params_.controller_frame_,tf_tolerance);
+            tf_buffer_->transform(in, iface_params_.controller_frame_, tf_tolerance);
         points[i].setX(out.point.x);
         points[i].setY(out.point.y);
 
       } catch (tf2::TransformException &ex) {
-        RCLCPP_WARN(logger_,
+        RCLCPP_WARN(node_->get_logger(),
           "Could NOT transform "
           "laser point %i to %s: "
           "%s",
@@ -204,12 +196,11 @@ void SFMSensorInterface::laserCb(
 
       try {
         tf2::Duration tf_tolerance = tf2::durationFromSec(0.1);
-
         geometry_msgs::msg::PointStamped p_point = tf_buffer_->transform(
             person_point, iface_params_.controller_frame_, tf_tolerance);
         people_points.push_back(p_point.point);
       } catch (tf2::TransformException &ex) {
-        RCLCPP_WARN(logger_,
+        RCLCPP_WARN(node_->get_logger(),
           "Could NOT transform "
           "person point to %s: "
           "%s",
@@ -304,7 +295,7 @@ void SFMSensorInterface::laserCb(
   obs_mutex_.lock();
   obstacles_ = points;
   obs_mutex_.unlock();
-  // RCLCPP_WARN(logger_, "laserCb. points.size: %i!!!",
+  // RCLCPP_WARN(node_->get_logger(), "laserCb. points.size: %i!!!",
   //             (int)points.size());
   publish_obstacle_points(points);
 }
@@ -433,10 +424,11 @@ void SFMSensorInterface::publish_obstacle_points(
  */
 void SFMSensorInterface::peopleCb(
   const people_msgs::msg::People::SharedPtr people) {
+
   if (!running_ || !odom_received_)
   return;
 
-  RCLCPP_INFO_ONCE(logger_, "People received");
+  RCLCPP_INFO_ONCE(node_->get_logger(), "People received");
   people_mutex_.lock();
   people_ = *people;
   people_mutex_.unlock();
@@ -445,14 +437,14 @@ void SFMSensorInterface::peopleCb(
   builtin_interfaces::msg::Time t = base_odom_.header.stamp;
   odom_mutex_.unlock();
   
-
-  //RCLCPP_INFO(logger_, "PeopleCb.GetAgents: %i", (int)people_.people.size());
-  /*for (auto p : people_.people) {
-   RCLCPP_FATAL(logger_,
-         "\tPerson--x: %.2f, y:%.2f, vx: %.2f, vy: %.2f, vz: %.2f",
-         p.position.x, p.position.y, p.velocity.x, p.velocity.y,
-         p.velocity.z);
-  } */
+  // RCLCPP_INFO(node_->get_logger(), "PeopleCb.GetAgents: %i",
+  //             (int)people_.people.size());
+  // for (auto p : people_.people) {
+  //   RCLCPP_INFO(node_->get_logger(),
+  //               "\tPerson--x: %.2f, y:%.2f, vx: %.2f, vy: %.2f, vz: %.2f",
+  //               p.position.x, p.position.y, p.velocity.x, p.velocity.y,
+  //               p.velocity.z);
+  // }
 
   std::vector<sfm::Agent> agents;
 
@@ -470,18 +462,15 @@ void SFMSensorInterface::peopleCb(
     tf2::Quaternion quat;
     quat.setRPY(0, 0, people->people[i].position.z);
     ps.pose.orientation = tf2::toMsg(quat);
-
-
     if (people->header.frame_id != iface_params_.controller_frame_) {
-
       geometry_msgs::msg::PoseStamped p;
       try {
         tf2::Duration tf_tolerance = tf2::durationFromSec(0.1);
-
         p = tf_buffer_->transform(ps, iface_params_.controller_frame_, tf_tolerance);
         ps = p;
       } catch (tf2::TransformException &ex) {
-        RCLCPP_WARN(logger_, "PeopleCallback. No transform %s", ex.what());
+        RCLCPP_WARN(node_->get_logger(), "PeopleCallback. No transform %s",
+                    ex.what());
         return;
       }
     }
@@ -490,8 +479,7 @@ void SFMSensorInterface::peopleCb(
     geometry_msgs::msg::Vector3 velocity;
     velocity.x = people->people[i].velocity.x;
     velocity.y = people->people[i].velocity.y;
-    velocity.z = 0.0;
-    
+    velocity.z = 0.0;  
 
     geometry_msgs::msg::Vector3 localV = SFMSensorInterface::transformVector(
       velocity, t, people->header.frame_id, iface_params_.controller_frame_);
@@ -520,14 +508,13 @@ void SFMSensorInterface::peopleCb(
     naiveGoal.radius = iface_params_.people_radius_;
     ag.goals.push_back(naiveGoal);
     ag.desiredVelocity = iface_params_.people_velocity_;
-
     agents.push_back(ag);
 
-/*     RCLCPP_FATAL(logger_,
-          "\tsfm::agent--id: %i, x: %.2f, y:%.2f, vx: %.2f, vy: %.2f, vz: %.2f",
-          ag.id, ag.position.getX(), ag.position.getY(),
-          ag.velocity.getX(), ag.velocity.getY(), ag.angularVelocity);  */
-           
+    // RCLCPP_INFO(
+    //     node_->get_logger(),
+    //     "\tsfm::agent--id: %i, x: %.2f, y:%.2f, vx: %.2f, vy: %.2f, vz:
+    //     %.2f", ag.id, ag.position.getX(), ag.position.getY(),
+    //     ag.velocity.getX(), ag.velocity.getY(), ag.angularVelocity);
   } 
 
   // Fill the obstacles of the agents
@@ -558,6 +545,7 @@ void SFMSensorInterface::odomCb(const nav_msgs::msg::Odometry::SharedPtr odom) {
   if (!running_)
     return;
 
+  RCLCPP_INFO_ONCE(node_->get_logger(), "Odom received");
   odom_received_ = true;
   // last_odom_ = rclcpp::Time(odom->header.stamp);
   // if (odom->header.frame_id != odom_frame_) {
@@ -678,7 +666,7 @@ SFMSensorInterface::transformVector(geometry_msgs::msg::Vector3 &vector,
     nv = tf_buffer_->transform(v, to, tf_tolerance);
   } catch (tf2::TransformException &ex) {
     RCLCPP_WARN(
-        logger_,
+        node_->get_logger(),
         "TransformVector. No transform from %s frame to %s frame. Ex: %s",
         from.c_str(), to.c_str(), ex.what());
   }
@@ -692,7 +680,7 @@ SFMSensorInterface::transformVector(geometry_msgs::msg::Vector3 &vector,
 
 void SFMSensorInterface::loadParameters(size_t agent_index) {
   if (agent_index >= agents_.size()) {
-    RCLCPP_ERROR(logger_, "Agent index out of bounds");
+    RCLCPP_ERROR(node_->get_logger(), "Agent index out of bounds");
     return;
   }
 
