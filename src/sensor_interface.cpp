@@ -22,7 +22,7 @@ SFMSensorInterface::SFMSensorInterface(
 
   laser_received_ = false;
   running_ = false;
-  
+
   auto node = parent_.lock();
   logger_ = node->get_logger();
   node_ = node;
@@ -42,7 +42,7 @@ SFMSensorInterface::SFMSensorInterface(
   agents_[0].teleoperated = true;
   agents_[0].groupId = -1;
   loadParameters(0);
-  
+
 
 
   //agents_[0].id = 0;
@@ -52,8 +52,8 @@ SFMSensorInterface::SFMSensorInterface(
   std::chrono::duration<int> buffer_timeout(1);
 
   laser_sub_ = node_->create_subscription<sensor_msgs::msg::LaserScan>(
-      iface_params_.laser_topic_, rclcpp::SensorDataQoS(),
-      std::bind(&SFMSensorInterface::laserCb, this, _1));
+    iface_params_.laser_topic_, rclcpp::SensorDataQoS(),
+    std::bind(&SFMSensorInterface::laserCb, this, _1));
 
   // message_filters does not support LifecycleNode
   // laser_sub_.subscribe(this, iface_params_.laser_topic_,
@@ -68,8 +68,8 @@ SFMSensorInterface::SFMSensorInterface(
   // filter_scan_->registerCallback(&SFMSensorInterface::laserCb, this);
 
   people_sub_ = node_->create_subscription<people_msgs::msg::People>(
-      iface_params_.people_topic_, rclcpp::SensorDataQoS(),
-      std::bind(&SFMSensorInterface::peopleCb, this, _1));
+    iface_params_.people_topic_, rclcpp::SensorDataQoS(),
+    std::bind(&SFMSensorInterface::peopleCb, this, _1));
 
   // people_sub_.subscribe(this, iface_params_.people_topic_);
   // filter_people_ =
@@ -82,8 +82,8 @@ SFMSensorInterface::SFMSensorInterface(
   // filter_people_->registerCallback(&SFMSensorInterface::peopleCb, this);
 
   odom_sub_ = node_->create_subscription<nav_msgs::msg::Odometry>(
-      iface_params_.odom_topic_, rclcpp::SensorDataQoS(),
-      std::bind(&SFMSensorInterface::odomCb, this, _1));
+    iface_params_.odom_topic_, rclcpp::SensorDataQoS(),
+    std::bind(&SFMSensorInterface::odomCb, this, _1));
 
   // odom_sub_.subscribe(this, iface_params_.odom_topic_);
   // filter_odom_ =
@@ -133,7 +133,7 @@ void SFMSensorInterface::laserCb(
   for (unsigned int i = 0; i < laser->ranges.size(); i++) {
 
     if (!std::isnan(laser->ranges[i]) && std::isfinite(laser->ranges[i]) &&
-        laser->ranges[i] < iface_params_.max_obstacle_dist_) {
+      laser->ranges[i] < iface_params_.max_obstacle_dist_) {
 
       utils::Vector2d point(laser->ranges[i] * cos(angle),
                             laser->ranges[i] * sin(angle));
@@ -172,9 +172,9 @@ void SFMSensorInterface::laserCb(
 
       } catch (tf2::TransformException &ex) {
         RCLCPP_WARN(logger_,
-                    "Could NOT transform "
-                    "laser point %i to %s: "
-                    "%s",
+          "Could NOT transform "
+          "laser point %i to %s: "
+          "%s",
                     (int)(i + 1), iface_params_.controller_frame_.c_str(),
                     ex.what());
         continue;
@@ -210,10 +210,10 @@ void SFMSensorInterface::laserCb(
         people_points.push_back(p_point.point);
       } catch (tf2::TransformException &ex) {
         RCLCPP_WARN(logger_,
-                    "Could NOT transform "
-                    "person point to %s: "
-                    "%s",
-                    iface_params_.controller_frame_.c_str(), ex.what());
+          "Could NOT transform "
+          "person point to %s: "
+          "%s",
+          iface_params_.controller_frame_.c_str(), ex.what());
         return;
       }
     }
@@ -232,7 +232,7 @@ void SFMSensorInterface::laserCb(
         float dx = p.getX() - person.x;
         float dy = p.getY() - person.y;
         float d = std::hypotf(dx, dy);
-        if (d <= iface_params_.person_radius_) {
+        if (d <= iface_params_.people_radius_) {
           remove = true;
           break;
         }
@@ -290,7 +290,7 @@ void SFMSensorInterface::laserCb(
   //       float dx = p.getX() - ob.x;
   //       float dy = p.getY() - ob.y;
   //       float d = std::hypotf(dx, dy);
-  //       if (d <= person_radius_) {
+  //       if (d <= people_radius_) {
   //         remove = true;
   //         break;
   //       }
@@ -392,7 +392,7 @@ void SFMSensorInterface::publish_obstacle_points(
 //     ag.yaw = utils::Angle::fromRadian(atan2(localV.y, localV.x));
 //     ag.velocity.set(localV.x, localV.y);
 //     ag.linearVelocity = ag.velocity.norm();
-//     ag.radius = person_radius_;
+//     ag.radius = people_radius_;
 //     ag.teleoperated = false;
 //     // if (fabs(people->people[i].vel) < 0.05) {
 //     //	agents[i+1].velocity.set(0,0);
@@ -405,7 +405,7 @@ void SFMSensorInterface::publish_obstacle_points(
 //     // No group consideration for the moment
 //     utils::Vector2d v = ag.position + naive_goal_time_ * ag.velocity;
 //     naiveGoal.center.set(v.getX(), v.getY());
-//     naiveGoal.radius = person_radius_;
+//     naiveGoal.radius = people_radius_;
 //     ag.goals.push_back(naiveGoal);
 //     ag.desiredVelocity = people_velocity_;
 //     ag.groupId = -1;
@@ -471,28 +471,28 @@ void SFMSensorInterface::peopleCb(
     quat.setRPY(0, 0, people->people[i].position.z);
     ps.pose.orientation = tf2::toMsg(quat);
 
- 
+
     if (people->header.frame_id != iface_params_.controller_frame_) {
 
       geometry_msgs::msg::PoseStamped p;
       try {
-      tf2::Duration tf_tolerance = tf2::durationFromSec(0.1);
+        tf2::Duration tf_tolerance = tf2::durationFromSec(0.1);
 
-      p = tf_buffer_->transform(ps, iface_params_.controller_frame_, tf_tolerance);
-      ps = p;
+        p = tf_buffer_->transform(ps, iface_params_.controller_frame_, tf_tolerance);
+        ps = p;
       } catch (tf2::TransformException &ex) {
-      RCLCPP_WARN(logger_, "PeopleCallback. No transform %s", ex.what());
-      return;
+        RCLCPP_WARN(logger_, "PeopleCallback. No transform %s", ex.what());
+        return;
       }
     }
-    ag.position.set(ps.pose.position.x, ps.pose.position.y); 
+    ag.position.set(ps.pose.position.x, ps.pose.position.y);
 
     geometry_msgs::msg::Vector3 velocity;
     velocity.x = people->people[i].velocity.x;
     velocity.y = people->people[i].velocity.y;
     velocity.z = 0.0;
     
-    
+
     geometry_msgs::msg::Vector3 localV = SFMSensorInterface::transformVector(
       velocity, t, people->header.frame_id, iface_params_.controller_frame_);
 
@@ -504,20 +504,20 @@ void SFMSensorInterface::peopleCb(
       ag.yaw = utils::Angle::fromRadian(
         atan2(ag.velocity.getY(), ag.velocity.getX()));
     ag.angularVelocity = people->people[i].velocity.z;
-    ag.radius = iface_params_.person_radius_;
+    ag.radius = iface_params_.people_radius_;
     ag.teleoperated = false;
 
     // The SFM requires a local goal for each agent. We will assume that the
     // goal for people depends on its current velocity
     ag.goals.clear();
     sfm::Goal naiveGoal;
-      // No group consideration for the moment
+    // No group consideration for the moment
     // naiveGoal.center =
     //    agents_[i + 1].position + naive_goal_time_ * agents_[i + 1].velocity;
     utils::Vector2d v =
       ag.position + iface_params_.naive_goal_time_ * ag.velocity;
     naiveGoal.center.set(v.getX(), v.getY());
-    naiveGoal.radius = iface_params_.person_radius_;
+    naiveGoal.radius = iface_params_.people_radius_;
     ag.goals.push_back(naiveGoal);
     ag.desiredVelocity = iface_params_.people_velocity_;
 
@@ -535,16 +535,16 @@ void SFMSensorInterface::peopleCb(
   std::vector<utils::Vector2d> obs_points = obstacles_;
   obs_mutex_.unlock();
   for (unsigned int i = 0; i < agents.size(); i++) {
-  agents[i].obstacles1.clear();
-  agents[i].obstacles1 = obs_points;
+    agents[i].obstacles1.clear();
+    agents[i].obstacles1 = obs_points;
   }
 
   agents_mutex_.lock();
   agents_.resize(people->people.size() + 1);
   agents_[0].obstacles1 = obs_points;
   for (unsigned int i = 1; i < agents_.size(); i++) {
-  agents_[i] = agents[i - 1];
-  loadParameters(i);
+    agents_[i] = agents[i - 1];
+    loadParameters(i);
   }
   agents_mutex_.unlock();
 }
@@ -580,7 +580,7 @@ void SFMSensorInterface::odomCb(const nav_msgs::msg::Odometry::SharedPtr odom) {
 
   agent.linearVelocity =
       std::sqrt(odom->twist.twist.linear.x * odom->twist.twist.linear.x +
-                odom->twist.twist.linear.y * odom->twist.twist.linear.y);
+    odom->twist.twist.linear.y * odom->twist.twist.linear.y);
   agent.angularVelocity = odom->twist.twist.angular.z;
 
   // The velocity in the odom messages is in the robot local frame!!!
@@ -691,25 +691,25 @@ SFMSensorInterface::transformVector(geometry_msgs::msg::Vector3 &vector,
 }
 
 void SFMSensorInterface::loadParameters(size_t agent_index) {
-    if (agent_index >= agents_.size()) {
-        RCLCPP_ERROR(logger_, "Agent index out of bounds");
-        return;
-    }
+  if (agent_index >= agents_.size()) {
+    RCLCPP_ERROR(logger_, "Agent index out of bounds");
+    return;
+  }
 
     sfm::Agent &agent = agents_[agent_index];
-    agent.params.forceFactorDesired = iface_params_.forceFactorDesired;
-    agent.params.forceFactorObstacle = iface_params_.forceFactorObstacle;
-    agent.params.forceSigmaObstacle = iface_params_.forceSigmaObstacle;
-    agent.params.forceFactorSocial = iface_params_.forceFactorSocial;
-    agent.params.forceFactorGroupGaze = iface_params_.forceFactorGroupGaze;
-    agent.params.forceFactorGroupCoherence = iface_params_.forceFactorGroupCoherence;
-    agent.params.forceFactorGroupRepulsion = iface_params_.forceFactorGroupRepulsion;
-    agent.params.lambda = iface_params_.lambda;
-    agent.params.gamma = iface_params_.gamma;
-    agent.params.n = iface_params_.n;
-    agent.params.nPrime = iface_params_.nPrime;
-    agent.params.epsilon = iface_params_.epsilon;
-    agent.params.relaxationTime = iface_params_.relaxationTime;
+  agent.params.forceFactorDesired = iface_params_.forceFactorDesired;
+  agent.params.forceFactorObstacle = iface_params_.forceFactorObstacle;
+  agent.params.forceSigmaObstacle = iface_params_.forceSigmaObstacle;
+  agent.params.forceFactorSocial = iface_params_.forceFactorSocial;
+  agent.params.forceFactorGroupGaze = iface_params_.forceFactorGroupGaze;
+  agent.params.forceFactorGroupCoherence = iface_params_.forceFactorGroupCoherence;
+  agent.params.forceFactorGroupRepulsion = iface_params_.forceFactorGroupRepulsion;
+  agent.params.lambda = iface_params_.lambda;
+  agent.params.gamma = iface_params_.gamma;
+  agent.params.n = iface_params_.n;
+  agent.params.nPrime = iface_params_.nPrime;
+  agent.params.epsilon = iface_params_.epsilon;
+  agent.params.relaxationTime = iface_params_.relaxationTime;
 }
 
 

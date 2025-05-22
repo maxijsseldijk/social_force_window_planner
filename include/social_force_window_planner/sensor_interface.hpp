@@ -56,7 +56,7 @@ namespace social_force_window_planner {
 
 struct InterfaceParams {
   InterfaceParams()
-      : max_robot_vel_x_(0.7),max_robot_vel_y_(0.7), robot_radius_(0.35), person_radius_(0.35),
+      : max_robot_vel_x_(0.7),max_robot_vel_y_(0.7), robot_radius_(0.35), people_radius_(0.35),
         robot_frame_("base_link"), controller_frame_("odom"),
         max_obstacle_dist_(3.0), naive_goal_time_(2.0), people_velocity_(1.0),
         laser_topic_("scan"), people_topic_("people"), odom_topic_("odom"), forceFactorDesired(2.0), forceFactorObstacle(10.0),
@@ -89,9 +89,9 @@ struct InterfaceParams {
                                                  rclcpp::ParameterValue(0.35));
     node->get_parameter(name + ".robot_radius", robot_radius_);
 
-    nav2_util::declare_parameter_if_not_declared(node, name + ".person_radius",
+    nav2_util::declare_parameter_if_not_declared(node, name + ".people_radius",
                                                  rclcpp::ParameterValue(0.35));
-    node->get_parameter(name + ".person_radius", person_radius_);
+    node->get_parameter(name + ".people_radius", people_radius_);
 
     nav2_util::declare_parameter_if_not_declared(
         node, name + ".robot_base_frame", rclcpp::ParameterValue("base_link"));
@@ -159,11 +159,11 @@ struct InterfaceParams {
     node->get_parameter(name + ".forceFactorGroupRepulsion", forceFactorGroupRepulsion);
 
     nav2_util::declare_parameter_if_not_declared(
-        node, name + ".lambda", rclcpp::ParameterValue(2.0));
+      node, name + ".lambda", rclcpp::ParameterValue(2.0));
     node->get_parameter(name + ".lambda", lambda);
 
     nav2_util::declare_parameter_if_not_declared(
-        node, name + ".gamma", rclcpp::ParameterValue(0.35));
+      node, name + ".gamma", rclcpp::ParameterValue(0.35));
     node->get_parameter(name + ".gamma", gamma);
 
     nav2_util::declare_parameter_if_not_declared(
@@ -171,26 +171,26 @@ struct InterfaceParams {
     node->get_parameter(name + ".n", n);
 
     nav2_util::declare_parameter_if_not_declared(
-        node, name + ".nPrime", rclcpp::ParameterValue(3.0));
+      node, name + ".nPrime", rclcpp::ParameterValue(3.0));
     node->get_parameter(name + ".nPrime", nPrime);
 
     nav2_util::declare_parameter_if_not_declared(
-        node, name + ".relaxationTime", rclcpp::ParameterValue(0.5));
+      node, name + ".relaxationTime", rclcpp::ParameterValue(0.5));
     node->get_parameter(name + ".relaxationTime", relaxationTime);
 
     nav2_util::declare_parameter_if_not_declared(
-        node, name + ".epsilon", rclcpp::ParameterValue(0.005));
+      node, name + ".epsilon", rclcpp::ParameterValue(0.005));
     node->get_parameter(name + ".epsilon", relaxationTime);
 
     RCLCPP_INFO_ONCE(node->get_logger(),
-                     "\nSFM SENSOR INTERFACE:\nlaser_topic: %s\npeople_topic: "
-                     "%s\nodom_topic: %s\nmax_obstacle_dist: "
-                     "%.3f\nnaive_goal_time: %.2f\npeople_velocity: %.2f\n" 
-                     "forceFactorDesired: %.2f\nforceFactorObstacle: %.2f\n"
-                     "forceSigmaObstacle: %.2f\nforceFactorSocial: %.2f\n"
-                     "forceFactorGroupGaze: %.2f\nforceFactorGroupCoherence: %.2f\n"
-                     "forceFactorGroupRepulsion: %.2f\nlambda: %.2f\ngamma: %.2f\n"
-                     "n: %.2f\nnPrime: %.2f\nrelaxationTime: %.2f\n",
+      "\nSFM SENSOR INTERFACE:\nlaser_topic: %s\npeople_topic: "
+      "%s\nodom_topic: %s\nmax_obstacle_dist: "
+      "%.3f\nnaive_goal_time: %.2f\npeople_velocity: %.2f\n"
+      "forceFactorDesired: %.2f\nforceFactorObstacle: %.2f\n"
+      "forceSigmaObstacle: %.2f\nforceFactorSocial: %.2f\n"
+      "forceFactorGroupGaze: %.2f\nforceFactorGroupCoherence: %.2f\n"
+      "forceFactorGroupRepulsion: %.2f\nlambda: %.2f\ngamma: %.2f\n"
+      "n: %.2f\nnPrime: %.2f\nrelaxationTime: %.2f\n",
                      laser_topic_.c_str(), people_topic_.c_str(),
                      odom_topic_.c_str(), max_obstacle_dist_, naive_goal_time_,
                      people_velocity_, forceFactorDesired, forceFactorObstacle,
@@ -211,7 +211,7 @@ struct InterfaceParams {
   float max_robot_vel_x_;
   float max_robot_vel_y_;
   float robot_radius_;
-  float person_radius_;
+  float people_radius_;
   std::string robot_frame_;
   std::string controller_frame_;
   float max_obstacle_dist_;
@@ -235,12 +235,12 @@ struct InterfaceParams {
   double nPrime;
   double relaxationTime;
   double epsilon;
-
+  
 };
 
     class SFMSensorInterface {
-    public:
-    /**
+public:
+  /**
      * @brief  Default constructor
      * @param parent pointer to a ros node handle to publish to topics
      * @param tf Pointer to tf2 buffer
@@ -249,33 +249,33 @@ struct InterfaceParams {
                             const std::shared_ptr<tf2_ros::Buffer> &tf,
                             const std::string name);
 
-        /**
+  /**
          * @brief  Destructor class
          */
-        ~SFMSensorInterface();
+  ~SFMSensorInterface();
 
-        /**
+  /**
          * @brief  Callback to process the laser scan sensory input.
          * @param laser laserScan message to be processed
          */
-        void laserCb(const sensor_msgs::msg::LaserScan::SharedPtr laser);
+  void laserCb(const sensor_msgs::msg::LaserScan::SharedPtr laser);
 
-        /**
+  /**
          * @brief  Callback to process the people detected in the robot vecinity.
          * @param people message with the people to be processed
          */
-        void peopleCb(const people_msgs::msg::People::SharedPtr people);
+  void peopleCb(const people_msgs::msg::People::SharedPtr people);
 
-        /**
+  /**
          * @brief  Callback to process the odometry messages with the robot movement.
          * @param odom messages with the obstacles to be processed.
          */
-        void odomCb(const nav_msgs::msg::Odometry::SharedPtr odom);
+  void odomCb(const nav_msgs::msg::Odometry::SharedPtr odom);
 
 
-        void loadParameters(size_t agent_index);
+  void loadParameters(size_t agent_index);
 
-        /**
+  /**
          * @brief  Tranform a coordinate vector from one frame to another
          * @param vector coordinate vector in the origin frame
          * @param from string with the name of the origin frame
@@ -285,84 +285,84 @@ struct InterfaceParams {
         geometry_msgs::msg::Vector3
         transformVector(geometry_msgs::msg::Vector3 &vector,
                         builtin_interfaces::msg::Time t, std::string from,
-                        std::string to);
+    std::string to);
 
-        /**
+  /**
          * @brief  returns the vector of sfm agents
          * @return agents vector
          */
-        std::vector<sfm::Agent> getAgents();
+  std::vector<sfm::Agent> getAgents();
         void getOdom(nav_msgs::msg::Odometry &base_odom);
-        // void getRobotVel(geometry_msgs::msg::PoseStamped &robot_vel);
+  // void getRobotVel(geometry_msgs::msg::PoseStamped &robot_vel);
 
-        void start() { running_ = true; };
-        void stop() { running_ = false; };
+  void start() { running_ = true; };
+  void stop() { running_ = false; };
 
-        private:
-        /**
+private:
+  /**
          * @brief  publish the transformed points in RViz
          * @param points vector with the coordinates of the points
          * @return none
          */
         void publish_obstacle_points(const std::vector<utils::Vector2d> &points);
 
-        // void updateAgents();
+  // void updateAgents();
 
-        // rclcpp::Node *nh_; // Pointer to the node node handle
-        // rclcpp::Node::SharedPtr n_;
-        rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
-        std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-        std::string name_;
-        // tf2_ros::Buffer *tf_buffer_; // Pointer to the tfBuffer created in the node
-        rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
-        rclcpp::Logger logger_{rclcpp::get_logger("SFMSensorInterface")};
+  // rclcpp::Node *nh_; // Pointer to the node node handle
+  // rclcpp::Node::SharedPtr n_;
+  rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::string name_;
+  // tf2_ros::Buffer *tf_buffer_; // Pointer to the tfBuffer created in the node
+  rclcpp_lifecycle::LifecycleNode::WeakPtr parent_;
+  rclcpp::Logger logger_{rclcpp::get_logger("SFMSensorInterface")};
 
-        InterfaceParams iface_params_;
+  InterfaceParams iface_params_;
 
-        rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-        // message_filters does not support LifecycleNode
-        // message_filters::Subscriber<nav_msgs::msg::Odometry> odom_sub_;
-        // std::shared_ptr<tf2_ros::MessageFilter<nav_msgs::msg::Odometry>>
-        // filter_odom_;
-        std::mutex odom_mutex_;
-        nav_msgs::msg::Odometry base_odom_;
-        rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
-        // message_filters::Subscriber<sensor_msgs::msg::LaserScan> laser_sub_;
-        // std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>
-        //    filter_scan_;
-        rclcpp::Subscription<people_msgs::msg::People>::SharedPtr people_sub_;
-        // message_filters::Subscriber<people_msgs::msg::People> people_sub_;
-        // std::shared_ptr<tf2_ros::MessageFilter<people_msgs::msg::People>>
-        //    filter_people_;
-        // rclcpp::Subscription<dynamic_obstacle_detector::DynamicObstacles>::SharedPtr
-        //    dyn_obs_sub_;
-        rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr sonar_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+  // message_filters does not support LifecycleNode
+  // message_filters::Subscriber<nav_msgs::msg::Odometry> odom_sub_;
+  // std::shared_ptr<tf2_ros::MessageFilter<nav_msgs::msg::Odometry>>
+  // filter_odom_;
+  std::mutex odom_mutex_;
+  nav_msgs::msg::Odometry base_odom_;
+  rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
+  // message_filters::Subscriber<sensor_msgs::msg::LaserScan> laser_sub_;
+  // std::shared_ptr<tf2_ros::MessageFilter<sensor_msgs::msg::LaserScan>>
+  //    filter_scan_;
+  rclcpp::Subscription<people_msgs::msg::People>::SharedPtr people_sub_;
+  // message_filters::Subscriber<people_msgs::msg::People> people_sub_;
+  // std::shared_ptr<tf2_ros::MessageFilter<people_msgs::msg::People>>
+  //    filter_people_;
+  // rclcpp::Subscription<dynamic_obstacle_detector::DynamicObstacles>::SharedPtr
+  //    dyn_obs_sub_;
+  rclcpp::Subscription<sensor_msgs::msg::Range>::SharedPtr sonar_sub_;
         std::shared_ptr<
             rclcpp_lifecycle::LifecyclePublisher<visualization_msgs::msg::Marker>>
-            points_pub_;
-        // rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr points_pub_;
+    points_pub_;
+  // rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr points_pub_;
 
         std::vector<sfm::Agent> agents_; // 0: robot, 1..: Others
-        // sfm::Agent robot_agent_;
-        std::mutex agents_mutex_;
-        std::vector<utils::Vector2d> obstacles_;
-        std::mutex obs_mutex_;
+  // sfm::Agent robot_agent_;
+  std::mutex agents_mutex_;
+  std::vector<utils::Vector2d> obstacles_;
+  std::mutex obs_mutex_;
 
-        bool running_;
+  bool running_;
 
-        bool laser_received_;
-        bool odom_received_;
-        rclcpp::Time last_laser_;
-        // rclcpp::Time last_odom_;
+  bool laser_received_;
+  bool odom_received_;
+  rclcpp::Time last_laser_;
+  // rclcpp::Time last_odom_;
 
-        people_msgs::msg::People people_;
-        std::mutex people_mutex_;
-        // dynamic_obstacle_detector::DynamicObstacles dyn_obs_;
-        // std::mutex obs_mutex_;
+  people_msgs::msg::People people_;
+  std::mutex people_mutex_;
+  // dynamic_obstacle_detector::DynamicObstacles dyn_obs_;
+  // std::mutex obs_mutex_;
 
-        // bool use_static_map_;
-        // sfm::RosMap *static_map_;
-    };
+  // bool use_static_map_;
+  // sfm::RosMap *static_map_;
+};
 
 } // namespace social_force_window_planner
 
